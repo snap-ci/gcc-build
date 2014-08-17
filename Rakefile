@@ -60,7 +60,7 @@ task :configure do
     end
   end
   cd 'gcc-build' do
-    sh "../src/gcc-#{version}/configure --prefix=#{prefix} --disable-multilib --enable-languages=c,c++,lto > #{File.dirname(__FILE__)}/log/configure.#{version}.log 2>&1"
+    sh "../src/gcc-#{version}/configure --prefix=#{prefix} --enable-languages=c,c++,lto --enable-bootstrap --disable-multilib --enable-shared --enable-threads=posix --enable-checking=release --with-system-zlib --enable-__cxa_atexit --disable-libunwind-exceptions --enable-gnu-unique-object --enable-linker-build-id --enable-plugin --with-linker-hash-style=gnu --enable-initfini-array --disable-libgcj --with-tune=generic --with-arch_32=i686 --build=x86_64-redhat-linux > #{File.dirname(__FILE__)}/log/configure.#{version}.log 2>&1"
   end
 end
 
