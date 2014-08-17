@@ -52,7 +52,6 @@ base_url = "http://mirrors-usa.go-parts.com/gcc/releases"
     end
 
     task :configure do
-      sh("sudo -t yum install --assumeyes mpfr-devel libmpc-devel glibc-devel")
       cd "src" do
         sh "tar -zxf ../downloads/gcc-#{version}.tar.gz"
         cd "gcc-#{version}" do
