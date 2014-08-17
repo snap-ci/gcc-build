@@ -20,7 +20,7 @@ end
 
 base_url = "http://mirrors-usa.go-parts.com/gcc/releases"
 
-%w(4.6.4 4.7.4 4.8.3).each do |version|
+%w(4.8.3).each do |version|
   namespace version do
     release = Time.now.utc.strftime('%Y%m%d%H%M%S')
 
