@@ -58,10 +58,9 @@ task :configure do
     cd "gcc-#{version}" do
       sh("./contrib/download_prerequisites")
     end
-
-    cd 'gcc-build' do
-      sh "../src/configure --prefix=#{prefix} --disable-multilib --enable-languages=c,c++,lto > #{File.dirname(__FILE__)}/log/configure.#{version}.log 2>&1"
-    end
+  end
+  cd 'gcc-build' do
+    sh "../src/configure --prefix=#{prefix} --disable-multilib --enable-languages=c,c++,lto > #{File.dirname(__FILE__)}/log/configure.#{version}.log 2>&1"
   end
 end
 
