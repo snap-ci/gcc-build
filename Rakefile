@@ -33,11 +33,13 @@ CLEAN.include("jailed-root")
 CLEAN.include("log")
 CLEAN.include("pkg")
 CLEAN.include("src")
+CLEAN.include("gcc-build")
 
 task :init do
   mkdir_p "log"
   mkdir_p "pkg"
   mkdir_p "src"
+  mkdir_p "gcc-build"
   mkdir_p "downloads"
   mkdir_p "jailed-root"
 end
@@ -54,7 +56,11 @@ task :configure do
   cd "src" do
     sh "tar -zxf ../downloads/gcc-#{version}.tar.gz"
     cd "gcc-#{version}" do
-      sh "./configure --prefix=#{prefix} --disable-multilib --enable-languages=c,c++,lto > #{File.dirname(__FILE__)}/log/configure.#{version}.log 2>&1"
+      sh("./contrib/download_prerequisites")
+    end
+
+    cd 'gcc-build' do
+      sh "../src/configure --prefix=#{prefix} --disable-multilib --enable-languages=c,c++,lto > #{File.dirname(__FILE__)}/log/configure.#{version}.log 2>&1"
     end
   end
 end
@@ -63,7 +69,7 @@ task :make do
   num_processors = %x[grep --count processor /proc/cpuinfo].chomp.to_i
   num_jobs       = num_processors + 1
 
-  cd "src/gcc-#{version}" do
+  cd "gcc-build" do
     sh("make -j#{num_jobs} > #{File.dirname(__FILE__)}/log/make.#{version}.log 2>&1")
   end
 end
@@ -71,7 +77,7 @@ end
 task :make_install do
   rm_rf  jailed_root
   mkdir_p jailed_root
-  cd "src/gcc-#{version}" do
+  cd "gcc-build" do
     sh("make install DESTDIR=#{jailed_root} > #{File.dirname(__FILE__)}/log/make-install.#{version}.log 2>&1")
   end
 
