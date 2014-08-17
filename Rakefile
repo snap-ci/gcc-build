@@ -20,77 +20,76 @@ end
 
 base_url = "http://mirrors-usa.go-parts.com/gcc/releases"
 
-%w(4.8.3).each do |version|
-  namespace version do
-    release = Time.now.utc.strftime('%Y%m%d%H%M%S')
+version = "4.8.3"
+release = Time.now.utc.strftime('%Y%m%d%H%M%S')
+name    = "gcc-#{version}"
+description_string = %Q{Collection of compilers for gcc and g++}
 
-    description_string = %Q{Collection of compilers for gcc and g++}
+jailed_root = File.expand_path('../jailed-root', __FILE__)
+prefix = File.join('/opt/local/gcc', version)
 
-    jailed_root = File.expand_path('../jailed-root', __FILE__)
-    prefix = File.join('/opt/local/gcc', version)
+CLEAN.include("downloads")
+CLEAN.include("jailed-root")
+CLEAN.include("log")
+CLEAN.include("pkg")
+CLEAN.include("src")
 
-    CLEAN.include("downloads")
-    CLEAN.include("jailed-root")
-    CLEAN.include("log")
-    CLEAN.include("pkg")
-    CLEAN.include("src")
-
-    task :init do
-      mkdir_p "log"
-      mkdir_p "pkg"
-      mkdir_p "src"
-      mkdir_p "downloads"
-      mkdir_p "jailed-root"
-    end
-
-    task :download do
-      cd 'downloads' do
-        sh("curl --fail #{base_url}/gcc-#{version}/gcc-#{version}.tar.gz > gcc-#{version}.tar.gz 2>/dev/null")
-        sh("curl --fail #{base_url}/gcc-#{version}/md5.sum | grep gcc-#{version}.tar.gz > gcc-#{version}.tar.gz.md5sum 2>/dev/null")
-        sh("md5sum --status --check gcc-#{version}.tar.gz.md5sum")
-      end
-    end
-
-    task :configure do
-      cd "src" do
-        sh "tar -zxf ../downloads/gcc-#{version}.tar.gz"
-        cd "gcc-#{version}" do
-          sh "./configure --prefix=#{prefix} --disable-multilib --enable-languages=c,c++,lto > #{File.dirname(__FILE__)}/log/configure.#{version}.log 2>&1"
-        end
-      end
-    end
-
-    task :make do
-      num_processors = %x[grep --count processor /proc/cpuinfo].chomp.to_i
-      num_jobs       = num_processors + 1
-
-      cd "src/gcc-#{version}" do
-        sh("make -j#{num_jobs} > #{File.dirname(__FILE__)}/log/make.#{version}.log 2>&1")
-      end
-    end
-
-    task :make_install do
-      rm_rf  jailed_root
-      mkdir_p jailed_root
-      cd "src/gcc-#{version}" do
-        sh("make install DESTDIR=#{jailed_root} > #{File.dirname(__FILE__)}/log/make-install.#{version}.log 2>&1")
-      end
-    end
-
-    task :fpm do
-      cd 'pkg' do
-        sh(%Q{
-             bundle exec fpm -s dir -t #{distro} --name gcc-#{version} -a x86_64 --version "#{version}" -C #{jailed_root} --directories #{prefix} --verbose #{fpm_opts} --maintainer snap-ci@thoughtworks.com --vendor snap-ci@thoughtworks.com --url http://snap-ci.com --description "#{description_string}" --iteration #{release} --license 'GPL' .
-        })
-      end
-    end
-
-    desc "build and package gcc-#{version}"
-    task :all => [:clean, :init, :download, :configure, :make, :make_install, :fpm]
-  end
-
-  task :default => "#{version}:all"
+task :init do
+  mkdir_p "log"
+  mkdir_p "pkg"
+  mkdir_p "src"
+  mkdir_p "downloads"
+  mkdir_p "jailed-root"
 end
 
-desc "build all gcc"
-task :default
+task :download do
+  cd 'downloads' do
+    sh("curl --fail #{base_url}/gcc-#{version}/gcc-#{version}.tar.gz > gcc-#{version}.tar.gz 2>/dev/null")
+    sh("curl --fail #{base_url}/gcc-#{version}/md5.sum | grep gcc-#{version}.tar.gz > gcc-#{version}.tar.gz.md5sum 2>/dev/null")
+    sh("md5sum --status --check gcc-#{version}.tar.gz.md5sum")
+  end
+end
+
+task :configure do
+  cd "src" do
+    sh "tar -zxf ../downloads/gcc-#{version}.tar.gz"
+    cd "gcc-#{version}" do
+      sh "./configure --prefix=#{prefix} --disable-multilib --enable-languages=c,c++,lto > #{File.dirname(__FILE__)}/log/configure.#{version}.log 2>&1"
+    end
+  end
+end
+
+task :make do
+  num_processors = %x[grep --count processor /proc/cpuinfo].chomp.to_i
+  num_jobs       = num_processors + 1
+
+  cd "src/gcc-#{version}" do
+    sh("make -j#{num_jobs} > #{File.dirname(__FILE__)}/log/make.#{version}.log 2>&1")
+  end
+end
+
+task :make_install do
+  rm_rf  jailed_root
+  mkdir_p jailed_root
+  cd "src/gcc-#{version}" do
+    sh("make install DESTDIR=#{jailed_root} > #{File.dirname(__FILE__)}/log/make-install.#{version}.log 2>&1")
+  end
+
+  mkdir_p "#{jailed_root}/usr/local/bin"
+  cd "#{jailed_root}/usr/local/bin" do
+    Dir["../../../opt/local/gcc/#{version}/bin/*"].each do |bin_file|
+      ln_sf bin_file, File.basename(bin_file)
+    end
+  end
+end
+
+task :fpm do
+  cd 'pkg' do
+    sh(%Q{
+         bundle exec fpm -s dir -t #{distro} --name gcc-#{version} -a x86_64 --version "#{version}" -C #{jailed_root} --directories #{prefix} --verbose #{fpm_opts} --maintainer snap-ci@thoughtworks.com --vendor snap-ci@thoughtworks.com --url http://snap-ci.com --description "#{description_string}" --iteration #{release} --license 'GPL' .
+    })
+  end
+end
+
+desc "build and package gcc-#{version}"
+task :default => [:clean, :init, :download, :configure, :make, :make_install, :fpm]
