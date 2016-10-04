@@ -1,4 +1,6 @@
-This repo contains scripts needed to build deb and rpms for various versions of gcc
+[![Build Status](https://snap-ci.com/snap-ci/gcc-build/branch/master/build_image)](https://snap-ci.com/snap-ci/gcc-build/branch/master)
+
+This repo contains scripts needed to build deb and rpms for various versions of gcc. To report an issue, [please contact the Snap.ci support team.](https://snap-ci.com/contact-us)
 
 # CentOS/RHEL
 
